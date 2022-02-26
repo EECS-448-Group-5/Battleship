@@ -13,6 +13,24 @@ table {
    
 }
 
+#specialShot,
+#shipNumPick,
+#startGame,
+#chooseOP {
+  width: 90%;
+  margin-left: 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2.5em;
+}
+
+#startGame {
+  width: 100%;
+  margin-left: 0;
+  flex-direction: column;
+}
+
 .instruction{
   text-align: left;
   color: rgb(23, 64, 151);
@@ -170,6 +188,11 @@ th, td {
   touch-action: manipulation;
   vertical-align: top;
   white-space: nowrap;
+
+}
+
+.button-65:focus {
+    border: .25em solid black;
 }
 
 .button-65:hover {
