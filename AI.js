@@ -71,143 +71,107 @@ function mediumAI() {
 
 }
 
-//helper to mediumAI, finding next cell to shoot by going up, left, down, or right
-function guess4d() {
+function getNextChar(col, offset) {
+    col = col.charCodeAt(0) - 97 + offset;
+    col = String.fromCharCode(col + 97);
+    return col;
+}
+
+function getPrevChar(col, offset) {
+    col = col.charCodeAt(0) - 97 - offset;
+    col = String.fromCharCode(col + 97);
+    return col;
+}
+
+function charToInt(char) {
+    return char.charCodeAt(0) - 48;
+}
+
+function guess4d(orient = "up", offset = 1) {
     let nextCell;
-    let row = targetLoci[0]; //-'a';
-    let col = targetLoci[1] + targetLoci[2];
-    console.log(col);
+    let col = targetLoci[0]; //-'a';
+    let row = targetLoci[1] + targetLoci[2];
 
-    //ex b02 --> a02
+    //ex b02 --> b01
     if (orient == "up") {
-        let rowNum = row.charCodeAt(0) - 97;
 
-        if (rowNum - offset >= 0) {
-            rowNum = rowNum - offset;
-            nextCell = String.fromCharCode(rowNum + 97) + col;
+        if (row != "10") {
+            row = charToInt(targetLoci[1]) + charToInt(targetLoci[2]);
+        }
+        else {
+            row = 10;
+        }
+        if ((row - offset) >= 0) {
+            row = row - offset;
+            if (row < 10) //pad a zero and convert row to string
+            {
+                row = '0' + row;
+            }
+            nextCell = col + row;
             offset++;
             console.log(nextCell);
             return nextCell;
+
         }
         else { // reached border, change orientation and reset offset
-            orient = "right";
-            offset = 1;
-            guess4d();
+            guess4d("right", 1);
         }
-
-        // if(!isGuessed(nextCell)){
-        //     guessCell(nextCell);
-        //     offset++;
-        //     return;
-        // }
-    }
-
-    //ex b02--> b03
-    if (orient == "right") {
-        //process the column into an integer
-        if (targetLoci[1] == "0") {
-            col = targetLoci[2].charCodeAt(0) - 48; //convert to int version of num
-        }
-        else {
-            col = 10 * (targetLoci[1].charCodeAt(1) - 48) + targetLoci[1].charCodeAt(2);
-        }
-        if (col < 10) {
-            nextCell = col + offset;
-            if (nextCell < 10) {
-                nextCell = row + '0' + nextCell.toString();
-            } else {
-                nextCell = row + '10';
-            }
-            offset++;
-            console.log(nextCell);
-            return nextCell;
-        }
-        else {
-            orient = "down";
-            offset = 1;
-            guess4d();
-        }
-        // if(!isGuessed(nextCell)){
-        //     guessCell(nextCell);
-        //     offset++;
-        //     return;
-        // }
     }
 
     //ex b02--> c02
+    if (orient == "right") {
+        col = getNextChar(col, offset);
+        row = targetLoci[1] + targetLoci[2];
+        if (col <= 'j') {
+            nextCell = col + row;
+            offset++;
+            console.log(nextCell);
+            return nextCell;
+        }
+        else {
+            guess4d("down", 1);
+        }
+    }
+
+    //ex b02--> b03
     if (orient == "down") {
-        
-        col = targetLoci[1] + targetLoci[2];
-        let rowNum = row.charCodeAt(0) - 97;
-        //console.log(rowNum);
+        col = targetLoci[0];
+        row = targetLoci[1] + targetLoci[2];
 
-        if ((rowNum + offset) <= 10) {
-            rowNum = rowNum + offset;
-            nextCell = String.fromCharCode(rowNum + 97) + col.toString();
+        if (row != "10") {
+            row = charToInt(targetLoci[1]) + charToInt(targetLoci[2]);
+        }
+        else {
+            row = 10;
+        }
+
+        if ((row + offset) <= 10) {
+            row = row + offset;
+            if(row <10) {
+                row = '0'+row;
+            }
+            nextCell = col + row;
             offset++;
             console.log(nextCell);
             return nextCell;
         }
         else {
-            orient == "left";
-            offset = 1;
-            guess4d();
+            guess4d("left", 1);
         }
-
-        // if(!isGuessed(nextCell)){
-        //     guessCell(nextCell);
-        //     offset++;
-        //     return;
-        // }
     }
 
-    //ex b02--> b01
+    //ex b02--> a02
     if (orient == "left") {
-        //process the column into an integer
-        if (targetLoci[1] == "0") {
-            col = targetLoci[2].charCodeAt(0) - 48; //convert to int version of num
-        }
-        else {
-            col = 10;
-        }
-        //console.log(col);
-        //recreate cell string
-        if (col > 0) {
-            col = col - 1;
-            if (col < 10) {
-                nextCell = row + '0' + col.toString();
-            }
-            else {
-                nextCell = row + col.toString();
-            }
+        col = getPrevChar(col, offset);
+    
+        if (col >= 'a') {
+            nextCell = col + row;     
             offset++;
             console.log(nextCell);
             return nextCell;
         }
-        else {
-            orient = "up";
-            offset = 1;
-            guess4d();
+        else {;
+            guess4d("up", 1);
         }
-
-
     }
 }
-
-function randomInt(min = 1, max = 10) {
-    return Math.floor(Math.random() * (max - min + 1) + min)
-}
-
-function generateCell() {
-    let row =  randomInt();
-    if (row < 10) {
-        row = '0' + row.toString();
-    }
-
-    const col = String.fromCharCode(randomInt() + 97); //lowercase alphabet begins at ASCII 97
-
-    const cell = col + row.toString();
-    return cell;
-
-}
-
