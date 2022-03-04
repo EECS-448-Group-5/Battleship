@@ -30,7 +30,7 @@ function initializeGame() {
     createCoordinateArray(p2Ships);
 
     setInstruction("Player 1, take a guess!", 1);
-    ///setInstruction("Player 2, take a guess!", 2);
+    setInstruction("Player 2, take a guess!", 2);
 }
 
 //scans all components of the ship array to determine whether a guess is a hit or a miss
