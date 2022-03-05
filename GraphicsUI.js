@@ -1,45 +1,96 @@
+
+
 let p1Ships = [];
 let p2Ships = [];
 let gameState = "numShipSelection";
 
+let numShipsChoice = 0;
+let numShipsChosen = false;
+let p1SpecShot = 0;
+let p2SpecShot = 0;
+let specialShotChosen = false;
+let opponent = "";
+let opponentChosen = false;
+let difficulty = ""
+let difficultyChosen = false;
+
+let fireSpecShot = false;
 
 let currentWindow = "shipNumPick";
 let transitionTarget = "p1View";
 
+let columnLabelAlphabet = ['a','b','c','d','e','f','g','h','i','j'];
+
+function setNumShipsChoice(ships) {
+    numShipsChoice = ships;
+    numShipsChosen = true;
+}
+
+function setSpecialShot(count) {
+    p1SpecShot = count;
+    p2SpecShot = count;
+    specialShotChosen = true;
+}
+
+function setOpponent(op) {
+    opponent = op;
+    opponentChosen = true;
+}
+
+function setDifficulty(chooseDifficult) {
+    difficulty = chooseDifficult;
+    difficultyChosen = true;
+}
+
+function showDifficulty() {
+    document.getElementById("selectDifficulty").style.display = "flex";
+}
+
 //Builds the UI taking in the number of ships as a parameter.
-function createUI(numberOfShips)
+function createUI()
 {
-    //Builds div where p1 boards are displayed.
-    let p1Boards = document.createElement("div");
-    p1Boards.appendChild(drawGrid("p1HomeBoard", "homeBoard"));
-    p1Boards.appendChild(drawGrid("p1AttackBoard", "attackBoard"));
-    document.getElementById("p1View").insertBefore(p1Boards, document.getElementById("p1RotateButton"));
+    if(specialShotChosen == true && numShipsChosen == true && ((opponentChosen == true && opponent == "AI" && difficultyChosen == true) || (opponentChosen == true && opponent == "Human")))
+    {
+        hideElement("selectDifficulty");
+        hideElement("chooseOp");
+        hideElement("specialShot");
+        hideElement("startGame");
 
-    //Builds div where p1 ships that have yet to be placed are displayed.
-    let p1ShipsToPlace = document.createElement("div");
-    p1ShipsToPlace.appendChild(drawShips(numberOfShips, "p1"));
-    document.getElementById("p1View").appendChild(p1ShipsToPlace);
+        numberOfShips = numShipsChoice;
 
-    //Builds div where p2 boards are displayed.
-    let p2Boards = document.createElement("div");
-    p2Boards.appendChild(drawGrid("p2HomeBoard", "homeBoard"));
-    p2Boards.appendChild(drawGrid("p2AttackBoard", "attackBoard"));
-    document.getElementById("p2View").insertBefore(p2Boards, document.getElementById("p2RotateButton"));
+        //Builds div where p1 boards are displayed.
+        let p1Boards = document.createElement("div");
+        p1Boards.appendChild(drawGrid("p1HomeBoard", "homeBoard"));
+        p1Boards.appendChild(drawGrid("p1AttackBoard", "attackBoard"));
+        document.getElementById("p1View").insertBefore(p1Boards, document.getElementById("p1RotateButton"));
 
-    //Builds div where p2 ships that have yet to be placed are displayed.
-    let p2ShipsToPlace = document.createElement("div");
-    p2ShipsToPlace.appendChild(drawShips(numberOfShips, "p2"));
-    document.getElementById("p2View").appendChild(p2ShipsToPlace);
+        //Builds div where p1 ships that have yet to be placed are displayed.
+        let p1ShipsToPlace = document.createElement("div");
+        p1ShipsToPlace.appendChild(drawShips(numberOfShips, "p1"));
+        document.getElementById("p1View").appendChild(p1ShipsToPlace);
 
-    initializeShipPlacement(numberOfShips);
+        //Builds div where p2 boards are displayed.
+        let p2Boards = document.createElement("div");
+        p2Boards.appendChild(drawGrid("p2HomeBoard", "homeBoard"));
+        p2Boards.appendChild(drawGrid("p2AttackBoard", "attackBoard"));
+        document.getElementById("p2View").insertBefore(p2Boards, document.getElementById("p2RotateButton"));
+
+        //Builds div where p2 ships that have yet to be placed are displayed.
+        let p2ShipsToPlace = document.createElement("div");
+        p2ShipsToPlace.appendChild(drawShips(numberOfShips, "p2"));
+        document.getElementById("p2View").appendChild(p2ShipsToPlace);
+
+        setBigShotHover();
+        initializeShipPlacement(numberOfShips);
+    }
 }
 
 //Creates a table element with a given id and class (class should be homeBoard or attackBoard)
 //and populates it with 11 rows and 11 cells per row.
 function drawGrid(gridId, gridClass)
 {
-    let columnLabelAlphabet = ['a','b','c','d','e','f','g','h','i','j'];
-    
+
+
     //Creates a table and specifies its header and body.
     let grid = document.createElement("table");
     let tableHeader = document.createElement("thead");
@@ -96,7 +147,7 @@ function drawGrid(gridId, gridClass)
                 let tile = document.createElement("td");
                 let tileId;
 
-                if (i == 9) 
+                if (i == 9)
                 {
                     tileId = [ columnLabelAlphabet[j-1], ((i+1).toString()), gridId ].join('');
                 }
@@ -106,15 +157,22 @@ function drawGrid(gridId, gridClass)
                 }
 
                 tile.setAttribute("id", tileId);
+
                 tile.addEventListener('click', function() { parseTileClick(tileId); }, false);
-                tile.addEventListener('mouseover', function() { parseTileHover(tileId); }, false);
+
+                if(gridClass == "homeBoard")
+                {
+                  tile.addEventListener('mouseover', function() { parseTileHover(tileId); }, false);
+                } else {
+                  tile.setAttribute("class", "attackTile")
+                }
                 row.appendChild(tile);
             }
         }
-
         //Appends each row to the table body.
         tableBody.appendChild(row);
     }
+    //
 
     tableHeader.appendChild(gridTitleRow);
     tableHeader.appendChild(columnLabelRow);
@@ -126,8 +184,65 @@ function drawGrid(gridId, gridClass)
     return grid;
 }
 
-//Creates the inventory box containing the ships to be placed. Takes in an int representing the 
-//number of ships to draw (should be between 1 and 5) and a string representing which player the 
+function setBigShotHover() {
+  let tiles = document.getElementsByClassName("attackTile")
+    for (let i = 0; i < tiles.length-100; i++) {
+        tiles[i].addEventListener('mouseover', function() {
+          if (fireSpecShot && p1SpecShot > 0) {
+            let tileIds = getNeighborCells(tiles[i].id)
+            for (let j = 0; j < tileIds.length; j++) {
+              neighbor = document.getElementById(tileIds[j])
+              neighbor.classList.add('firePreview');
+            }
+          } else {
+            tiles[i].classList.add('firePreview');
+          }
+        }, false);
+        tiles[i].addEventListener('mouseout', function() {
+          if (fireSpecShot && p1SpecShot) {
+    
+            let tileIds = getNeighborCells(tiles[i].id)
+    
+            for (let j = 0; j < tileIds.length; j++) {
+              neighbor = document.getElementById(tileIds[j])
+              neighbor.classList.remove('firePreview');
+            }
+          } else {
+            tiles[i].classList.remove('firePreview');
+          }
+        }, false);
+  }
+
+    for (let i = tiles.length-100; i < tiles.length; i++) {
+        tiles[i].addEventListener('mouseover', function() {
+          if (fireSpecShot && p2SpecShot > 0) {
+            let tileIds = getNeighborCells(tiles[i].id)
+            for (let j = 0; j < tileIds.length; j++) {
+              neighbor = document.getElementById(tileIds[j])
+              neighbor.classList.add('firePreview');
+            }
+          } else {
+            tiles[i].classList.add('firePreview');
+          }
+        }, false);
+        tiles[i].addEventListener('mouseout', function() {
+          if (fireSpecShot && p2SpecShot > 0) {
+    
+            let tileIds = getNeighborCells(tiles[i].id)
+    
+            for (let j = 0; j < tileIds.length; j++) {
+              neighbor = document.getElementById(tileIds[j])
+              neighbor.classList.remove('firePreview');
+            }
+          } else {
+            tiles[i].classList.remove('firePreview');
+          }
+        }, false);
+      }
+}
+
+//Creates the inventory box containing the ships to be placed. Takes in an int representing the
+//number of ships to draw (should be between 1 and 5) and a string representing which player the
 //ships belong to (should be "p1" or "p2").
 function drawShips(numberOfShips, player)
 {
@@ -143,13 +258,13 @@ function drawShips(numberOfShips, player)
     shipInventoryBoxLabel.textContent = "Ship Inventory";
     shipInventoryBoxLabel.setAttribute("class", "shipInventoryBoxLabel");
     shipInventoryBoxHeading.appendChild(shipInventoryBoxLabel);
-    
+
     for (let i = 0; i < numberOfShips; i++)
     {
         let ship = document.createElement("div");
         let shipClass = "";
         let shipId = "";
-        
+
         switch (i)
         {
             case 0:
@@ -186,6 +301,40 @@ function drawShips(numberOfShips, player)
     return (shipInventoryBox);
 }
 
+function getNeighborCells(cell) {
+    let gridId = cell.substring(3)
+    cell = cell.substring(0, 3)
+
+    let cells = []
+    let startCol = columnLabelAlphabet.indexOf(cell[0])
+    let endCol = startCol
+    if (startCol < 9) {
+      endCol = startCol+1
+    }
+    if (startCol > 0) {
+        startCol -= 1
+    }
+
+    let startRow = parseInt(cell.substring(1, 3))
+    let endRow = startRow
+    if (endRow < 10) {
+      endRow = startRow+1
+    }
+    if (startRow > 1) {
+        startRow -= 1
+    }
+    for (let i = startRow; i <= endRow; i++) {
+        for (let j = startCol; j <= endCol; j++) {
+            if (i == 10) {
+                cells.push([columnLabelAlphabet[j], i.toString(), gridId].join(''))
+            } else {
+                cells.push([columnLabelAlphabet[j], "0", i.toString(), gridId].join(''))
+            }
+        }
+    }
+    return cells;
+}
+
 //function called when the user clicks a tile.
 //first checks if the player should be clicking the tile at the current stage of the game, then calls the corresponding handler
 function parseTileClick(tile)
@@ -197,10 +346,21 @@ function parseTileClick(tile)
         attemptShipPlace(tile)
     }
     else if(gameState == "p1Turn" && tile.substring(3) == "p1AttackBoard"){
-        guessCell(tile)
+        if (fireSpecShot && p1SpecShot > 0) {
+            cells = getNeighborCells(tile);
+            guessCells(cells)
+        } else {
+            guessCell(tile)
+        }
+
     }
     else if(gameState == "p2Turn" && tile.substring(3) == "p2AttackBoard"){
-        guessCell(tile)
+        if (fireSpecShot && p2SpecShot > 0) {
+            cells = getNeighborCells(tile);
+            guessCells(cells)
+        } else {
+           guessCell(tile)
+        }
     }
     else{
         console.log("Incorrect Game State for clicking")
@@ -208,9 +368,13 @@ function parseTileClick(tile)
 }
 
 
+function initSpecShot() {
+    fireSpecShot = !fireSpecShot
+}
+
 // this function will call the rotate button in the index html file
-// arguments: 
-// which player is playing, game state = ship rotate 
+// arguments:
+// which player is playing, game state = ship rotate
 function rotateShipButton(){
     //check the game state and the player that is playing
     //ie if the player is in the placement stage
@@ -238,7 +402,7 @@ function parseTileHover(tile)
 }
 
 
-//Takes in the id of the visual ship element, the destination tile id, and a boolean representing 
+//Takes in the id of the visual ship element, the destination tile id, and a boolean representing
 //if the ship is vertical, and moves the ship element over the destination tile.
 function moveShip(shipId, tileId, isVertical)
 {
@@ -307,7 +471,7 @@ function drawHitMark(tileId)
     hitMark.appendChild(hitMarkLabel);
 
     var tileRect = document.getElementById(tileId).getBoundingClientRect();
-    
+
     //Appends the hitMark div to the window corresponding to which player board the tile belongs to.
     //If the window is not currently visible, sets tileId to the corresponding tile of the currently
     //visible window.
@@ -333,11 +497,12 @@ function drawHitMark(tileId)
     }
 
     tileRect = document.getElementById(tileId).getBoundingClientRect();
-
     //Moves the hitMark div to the location tileRect.
     hitMark.style.position = "absolute";
-    hitMark.style.top = tileRect.top;
-    hitMark.style.left = tileRect.left;
+    if(tileId.substring(3) == "p1HomeBoard") hitMark.style.top = (tileRect.top - 75);
+    else if(tileId.substring(3) == "p2HomeBoard") hitMark.style.top = (tileRect.top +75 );
+    else hitMark.style.top = (tileRect.top);
+    hitMark.style.left = tileRect.left + 10 ;
     hitMark.style.zIndex = 1000;
 }
 
@@ -358,6 +523,16 @@ function updateTransitionText(text)
 //sets the transitionTarget to whatever string is passed in the argument
 function updateTransitionTarget(windowId){
     transitionTarget = windowId;
+    if(windowId == "p1View")
+    {
+        document.getElementById("specShotBtn1").style.display = "block";
+        document.getElementById("specShotTitle1").textContent = "Number of special shots remaining: " + p1SpecShot;
+    }
+    else if(windowId == "p2View")
+    {
+        document.getElementById("specShotBtn2").style.display = "block";
+        document.getElementById("specShotTitle2").textContent = "Number of special shots remaining: " + p2SpecShot;
+    }
 }
 
 //calls the switchWindow function
